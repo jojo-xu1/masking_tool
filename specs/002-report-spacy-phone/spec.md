@@ -23,6 +23,8 @@
 - Q: 同じ電話番号が同一実行内で複数回出現した場合の置換提案はどうするか？ → A: 同じ電話番号は同一実行内で同じ `PHONE_連番` にする
 - Q: 中国語人名検出はどこまで対応するか？ → A: 中国語も既定対応し、spaCy 中国語モデルが利用できない場合は決定的な中国語人名フォールバック検出で置換する
 - Q: マスキング処理中の外部通信・外部送信は許可するか？ → A: ユーザーが明示許可した場合だけ外部通信を許可する
+- Q: 日本語のログ・CSVでかなを含まない人名はどう扱うか？ → A: フォルダ処理時も日本語の電話番号、`.jp` メール、項目名などから日本語として扱い、短文ログ・CSVで spaCy が拾えない代表的人名は決定的な補助検出で置換する
+- Q: PDF の置換後ファイルはどう生成するか？ → A: テキスト型 PDF は元ページと非検出テキストを保持し、検出語句のみを置換する。白紙 PDF への全文再生成で元内容を失わせない
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,10 +84,13 @@
 - 人名検出が有効で、日本語または英語の必須人名検出機能が利用できない場合、処理を失敗させ、理由を画面または処理ログで確認できるようにする。
 - 中国語の spaCy 人名検出機能が利用できない場合、処理全体を止めず、決定的な中国語人名フォールバック検出で代表的人名を置換する。
 - 中国語人名フォールバック検出は、代表的な中国語姓と人名文脈に合う値を対象にし、電話番号・日付・プロジェクト名などの非人名語を人名として扱わない。
+- 日本語ログ・CSVが漢字中心でかなを含まない場合でも、日本語電話番号、`.jp` メール、または日本語項目名から日本語として扱い、中国語ルールへ誤分類しない。
+- 日本語人名検出は spaCy の結果を優先しつつ、短文ログや CSV の `owner=山田太郎`、`reviewer=佐藤花子`、名前列の値など代表的な日本語人名を補助的に検出する。
 - 電話番号らしい数字列が短すぎる、長すぎる、または日付・郵便番号と判断できる場合、電話番号として誤検出しない。
 - UTF-8 BOM 付きのテキスト系ファイルを処理する場合、BOM が検出語句や置換結果に混入せず、日本語・中国語文字が文字化けしない。
 - 検証用ファイルを使う場合、英語・日本語・中国語の通常検証は言語別ファイルで行い、多言語混在ファイルはストレステスト用途として扱う。
 - Office ファイルとテキスト型 PDF に日本語・中国語文字が含まれる場合、検証時に文字が読める状態で抽出・レポート確認できる。
+- テキスト型 PDF の置換後ファイルは元ページ構成と非検出テキストを保持し、検出語句だけを分類ラベル付き置換値へ差し替える。
 - マスキング処理中に外部通信や外部送信が必要になる場合、ユーザーの明示許可がない限り、入力内容、検出語句、置換提案、レポート内容を外部へ送信しない。
 - レポート行数が多い場合でも、ヘッダー固定、フィルター、列幅、折り返し、色分けが保持される。
 - 既存の `検出語句`、`置換提案`、リスク色分け、`output` 出力、入力ファイル非破壊の契約は維持する。
@@ -118,6 +123,9 @@
 - **FR-022**: System MUST provide language-separated validation samples for English, Japanese, and Chinese so standard verification does not depend on mixed-language files.
 - **FR-023**: System MUST provide Office and text-based PDF validation samples whose Japanese and Chinese text remains readable and extractable for masking verification.
 - **FR-024**: System MUST NOT transmit input content, detected terms, replacement suggestions, or report content to external services during masking unless the user explicitly permits that communication.
+- **FR-025**: System MUST classify kana-free Japanese log and CSV files as Japanese when Japanese phone numbers, `.jp` email addresses, or Japanese field markers indicate Japanese content.
+- **FR-026**: System MUST supplement Japanese spaCy person detection with deterministic log/CSV-friendly person-name detection for representative Japanese names in key-value fields and CSV name values.
+- **FR-027**: System MUST preserve original text-based PDF pages and non-detected content when writing masked PDF output, replacing only detected terms that are in scope for text-based PDF replacement.
 
 ### Masking Tool Contract *(mandatory for this project)*
 
@@ -157,6 +165,8 @@
 - **SC-007**: English, Japanese, and Chinese language-separated sample folders each include supported text, Office, and text-based PDF files plus an unsupported file for skip verification.
 - **SC-008**: In Japanese and Chinese validation samples, representative CJK strings are readable before processing and appear correctly in extracted text or report context after processing.
 - **SC-009**: A default masking run completes without requiring external communication, and any external communication path requires an explicit user permission state before it can transmit masking-related content.
+- **SC-010**: Japanese `ja_app.log` and `ja_contacts.csv` validation samples mask `山田太郎` and `佐藤花子` as `PERSON_連番` while preserving phone, email, and explicit-rule masking.
+- **SC-011**: Text-based PDF masked output keeps the original page count and public non-detected text while removing detected sensitive terms from extracted text.
 
 ## Assumptions
 
@@ -171,3 +181,5 @@
 - Mixed-language files may remain available for stress testing, but standard acceptance verification uses language-separated files.
 - Text-family inputs may include UTF-8 BOM because they are often opened or edited on Windows.
 - Dependency and model installation may use normal package sources outside the masking run, but masking execution itself treats external communication as opt-in only.
+- Japanese business logs and CSV files may contain mostly kanji, Latin field names, numeric phone numbers, and `.jp` email addresses without kana; these still belong to Japanese processing when the surrounding indicators match.
+- Text-based PDF masking preserves existing page structure through in-place redaction replacement where the detected text can be located by the PDF text engine; scanned PDFs and image-only content remain out of scope.
