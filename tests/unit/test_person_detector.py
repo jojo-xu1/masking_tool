@@ -80,3 +80,20 @@ def test_chinese_fallback_ignores_non_person_terms(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(person, "load_spacy_model", _raise)
 
     assert find_person_matches(_target("zh"), "联系电话是+86 10 1234 5678。秘密项目需要确认。", [_rule("zh", False, "fallback_heuristic")]) == []
+
+
+def test_japanese_person_detector_supplements_log_and_csv_names(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(person, "load_spacy_model", lambda _: lambda text: _Doc([]))
+
+    text = "owner=山田太郎 phone=03-1234-5678\nname,email\n佐藤花子,hanako@example.jp"
+    matches = find_person_matches(_target("ja"), text, [_rule("ja", True)])
+
+    assert [match.text for match in matches] == ["山田太郎", "佐藤花子"]
+
+
+def test_language_filter_ignores_ascii_entities_for_japanese(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(person, "load_spacy_model", lambda _: lambda text: _Doc([_Entity("owner", 0, 5)]))
+
+    matches = find_person_matches(_target("ja"), "owner=山田太郎", [_rule("ja", True)])
+
+    assert [match.text for match in matches] == ["山田太郎"]

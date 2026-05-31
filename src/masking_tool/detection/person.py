@@ -15,6 +15,18 @@ _MODEL_CACHE: dict[str, Any] = {}
 PERSON_LABELS = {"PERSON", "PER"}
 ASCII_ALNUM = re.compile(r"[A-Za-z0-9]")
 HAN = r"\u4e00-\u9fff"
+KANA = r"\u3040-\u30ff"
+JAPANESE_SURNAMES = (
+    "佐藤鈴木高橋田中伊藤渡辺山本中村小林加藤吉田山田佐々木山口松本井上木村林"
+    "清水山崎森池田橋本阿部石川山下中島前田藤田小川後藤岡田長谷川村上近藤"
+    "石井斎藤坂本遠藤青木藤井西村福田太田三浦藤原岡本松田中川中野原田小野"
+)
+JAPANESE_NAME = rf"(?:佐々木|長谷川|[{JAPANESE_SURNAMES}][{HAN}]?)[{HAN}]{{1,3}}"
+JAPANESE_LABEL_PATTERN = re.compile(
+    rf"(?:owner|reviewer|name|氏名|名前|担当者|承認者|申請者|連絡先)\s*[=:：]\s*(?P<name>{JAPANESE_NAME})",
+    re.IGNORECASE,
+)
+JAPANESE_DELIMITED_PATTERN = re.compile(rf"(?:(?<=^)|(?<=[,\s]))(?P<name>{JAPANESE_NAME})(?=(?:[,。\s]|$))")
 CHINESE_SURNAMES = (
     "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜"
     "谢邹喻柏潘葛范彭郎鲁韦昌马苗方俞任袁柳鲍史唐费廉岑薛雷贺倪汤"
@@ -68,9 +80,25 @@ def find_person_matches(target: TargetFile, text: str, rules: list[MaskingRule])
             if str(getattr(ent, "label_", "")).upper() not in PERSON_LABELS:
                 continue
             entity_text = str(getattr(ent, "text", ""))
-            if not entity_text.strip():
+            if not entity_text.strip() or not _is_candidate_for_language(rule.language, entity_text):
                 continue
             matches.extend(_matches_for_all_occurrences(rule, text, entity_text))
+        if rule.language == "ja":
+            matches.extend(_find_japanese_fallback_matches(rule, text))
+    return _dedupe_matches(matches)
+
+
+def _find_japanese_fallback_matches(rule: MaskingRule, text: str) -> list[DetectionMatch]:
+    names: list[str] = []
+    for pattern in (JAPANESE_LABEL_PATTERN, JAPANESE_DELIMITED_PATTERN):
+        for match in pattern.finditer(text):
+            name = match.group("name")
+            if name not in names:
+                names.append(name)
+
+    matches: list[DetectionMatch] = []
+    for name in names:
+        matches.extend(_matches_for_all_occurrences(rule, text, name))
     return matches
 
 
@@ -106,6 +134,28 @@ def _matches_for_all_occurrences(rule: MaskingRule, text: str, entity_text: str)
             matches.append(DetectionMatch(rule, index, end, value))
         start = index + len(value)
     return matches
+
+
+def _dedupe_matches(matches: list[DetectionMatch]) -> list[DetectionMatch]:
+    unique: list[DetectionMatch] = []
+    seen: set[tuple[int, int, str, str]] = set()
+    for match in matches:
+        key = (match.start, match.end, match.text, match.rule.id)
+        if key in seen:
+            continue
+        unique.append(match)
+        seen.add(key)
+    return sorted(unique, key=lambda match: (match.start, match.end))
+
+
+def _is_candidate_for_language(language: str, value: str) -> bool:
+    if language == "en":
+        return bool(re.search(r"[A-Za-z]", value))
+    if language == "ja":
+        return bool(re.search(rf"[{HAN}{KANA}]", value))
+    if language == "zh":
+        return bool(re.search(rf"[{HAN}]", value))
+    return bool(value.strip())
 
 
 def _has_person_boundaries(text: str, start: int, end: int) -> bool:

@@ -17,51 +17,51 @@ from masking_tool.replacement.mapping import ReplacementMapper
 from masking_tool.reporting.excel_report import write_report
 
 
-def _read_supported_text(target: TargetFile) -> str:
+def _read_supported_text_blocks(target: TargetFile) -> list[str]:
     if target.extension in {".txt", ".csv", ".log"}:
-        return read_text_file(target.source_path)
+        return [read_text_file(target.source_path)]
     if target.extension == ".docx":
-        from masking_tool.formats.docx_adapter import read_docx_text
+        from masking_tool.formats.docx_adapter import read_docx_blocks
 
-        return read_docx_text(target.source_path)
+        return read_docx_blocks(target.source_path)
     if target.extension == ".xlsx":
-        from masking_tool.formats.xlsx_adapter import read_xlsx_text
+        from masking_tool.formats.xlsx_adapter import read_xlsx_blocks
 
-        return read_xlsx_text(target.source_path)
+        return read_xlsx_blocks(target.source_path)
     if target.extension == ".pptx":
-        from masking_tool.formats.pptx_adapter import read_pptx_text
+        from masking_tool.formats.pptx_adapter import read_pptx_blocks
 
-        return read_pptx_text(target.source_path)
+        return read_pptx_blocks(target.source_path)
     if target.extension == ".pdf":
         from masking_tool.formats.pdf_adapter import read_pdf_text
 
-        return read_pdf_text(target.source_path)
+        return [read_pdf_text(target.source_path)]
     raise ValueError(f"Unsupported extension: {target.extension}")
 
 
-def _write_supported_text(target: TargetFile, output_path: Path, text: str) -> None:
+def _write_supported_text_blocks(target: TargetFile, output_path: Path, blocks: list[str]) -> None:
     if target.extension in {".txt", ".csv", ".log"}:
-        write_text_file(output_path, text)
+        write_text_file(output_path, blocks[0] if blocks else "")
         return
     if target.extension == ".docx":
-        from masking_tool.formats.docx_adapter import write_docx_text
+        from masking_tool.formats.docx_adapter import write_docx_blocks
 
-        write_docx_text(target.source_path, output_path, text)
+        write_docx_blocks(target.source_path, output_path, blocks)
         return
     if target.extension == ".xlsx":
-        from masking_tool.formats.xlsx_adapter import write_xlsx_text
+        from masking_tool.formats.xlsx_adapter import write_xlsx_blocks
 
-        write_xlsx_text(target.source_path, output_path, text)
+        write_xlsx_blocks(target.source_path, output_path, blocks)
         return
     if target.extension == ".pptx":
-        from masking_tool.formats.pptx_adapter import write_pptx_text
+        from masking_tool.formats.pptx_adapter import write_pptx_blocks
 
-        write_pptx_text(target.source_path, output_path, text)
+        write_pptx_blocks(target.source_path, output_path, blocks)
         return
     if target.extension == ".pdf":
         from masking_tool.formats.pdf_adapter import write_pdf_text
 
-        write_pdf_text(target.source_path, output_path, text)
+        write_pdf_text(target.source_path, output_path, "\n".join(blocks))
         return
     raise ValueError(f"Unsupported extension: {target.extension}")
 
@@ -82,7 +82,8 @@ def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, 
             results.append(FileProcessingResult(target))
             continue
         try:
-            text = _read_supported_text(target)
+            text_blocks = _read_supported_text_blocks(target)
+            text = "\n".join(text_blocks)
             if selection.selection_type == SelectionType.FOLDER:
                 language, confidence = detect_language(text)
                 if not language:
@@ -92,12 +93,23 @@ def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, 
                     continue
                 target.applied_language = language
                 target.language_confidence = confidence
-            detections = detect_text(target, text, rules, mapper, len(all_detections) + 1)
+            detections = []
+            masked_blocks: list[str] = []
+            next_no = len(all_detections) + 1
+            for block in text_blocks:
+                block_detections = detect_text(target, block, rules, mapper, next_no)
+                detections.extend(block_detections)
+                next_no += len(block_detections)
+                masked_blocks.append(apply_replacements(block, block_detections) if block_detections else block)
             all_detections.extend(detections)
             output_path = files_dir / target.relative_path
             if detections:
-                masked = apply_replacements(text, detections)
-                _write_supported_text(target, output_path, masked)
+                if target.extension == ".pdf":
+                    from masking_tool.formats.pdf_adapter import write_pdf_replacements
+
+                    write_pdf_replacements(target.source_path, output_path, detections)
+                else:
+                    _write_supported_text_blocks(target, output_path, masked_blocks)
                 target.status = FileStatus.PROCESSED
                 target.output_path = output_path
             else:
