@@ -1,5 +1,5 @@
 ﻿<!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read:
-specs/002-report-spacy-phone/plan.md
+specs/004-address-postal-ui-progress/plan.md
 <!-- SPECKIT END -->

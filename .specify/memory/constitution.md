@@ -1,8 +1,8 @@
 ﻿<!--
 Sync Impact Report
-Version change: 2.0.0 -> 2.1.0
+Version change: 2.1.0 -> 2.2.0
 Modified principles:
-- II. 検出結果に基づく不可逆置換: explicitly specified ML/NER detection sources are allowed when they remain configuration-controlled, auditable, and deterministic.
+- 開発ワークフローと品質ゲート: GitHub branch sync and issue-to-spec reflection are mandatory workflow gates.
 Added sections:
 - None
 Removed sections:
@@ -85,6 +85,16 @@ Python バージョン、使用ライブラリ、Office/PDF の処理方式、�
 スキップ記録、入力ファイル非破壊性は自動テストまたは明示的な検証手順で確認しなければ
 ならない。
 
+feature 開発では、作業ブランチを GitHub の同名リモートブランチへ同期しなければならない。
+少なくとも実装完了時、issue 解決時、PR 作成前には `git push` または同等の手段で
+ローカルブランチと GitHub ブランチを同期し、同期できない場合は理由と未同期状態を
+作業記録または最終報告に明示しなければならない。
+
+GitHub issue またはローカル issue 下書きを解決する変更では、実装・テストだけでなく、
+関連する `spec.md` に解決後の仕様、制約、受け入れ条件、または edge case を反映しなければ
+ならない。issue の解決記録には、関連 spec requirement、実施タスク、検証結果、未解決の
+残課題を追跡できる形で記録しなければならない。
+
 ## Governance
 
 この憲章は、マスキングツールの仕様、計画、タスク、実装判断に優先する。憲章と矛盾する
@@ -95,4 +105,4 @@ Python バージョン、使用ライブラリ、Office/PDF の処理方式、�
 PATCH とする。各 feature の計画時には Constitution Check を通過し、実装完了前に
 再確認しなければならない。
 
-**Version**: 2.1.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-30
+**Version**: 2.2.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-31

@@ -16,6 +16,8 @@ SAMPLES = {
         "mobile": "2025550143",
         "date": "2026-05-31",
         "postal": "10001",
+        "address": "123 Market Street, New York, NY",
+        "out_of_scope_postal": "100-0001",
         "project": "Project Falcon",
         "body": [
             "Owner: Alice Smith",
@@ -26,6 +28,10 @@ SAMPLES = {
             "Compact phone: 2025550143",
             "Review date: 2026-05-31",
             "Postal code: 10001",
+            "Address: 123 Market Street, New York, NY",
+            "Combined: Alice Smith phone 202-555-0143 ZIP 10001 Address: 123 Market Street, New York, NY",
+            "Japan postal out of scope for English: 100-0001",
+            "Ambiguous location note: New York office",
             "Sensitive project: Project Falcon",
             "Alice Smith approved the report.",
             "Alice Smith requested a second review.",
@@ -41,6 +47,8 @@ SAMPLES = {
         "mobile": "09012345678",
         "date": "2026-05-31",
         "postal": "100-0001",
+        "address": "東京都千代田区千代田1-1",
+        "out_of_scope_postal": "10001",
         "project": "極秘計画",
         "body": [
             "担当者: 山田太郎",
@@ -51,6 +59,10 @@ SAMPLES = {
             "携帯電話: 09012345678",
             "確認日: 2026-05-31",
             "郵便番号: 100-0001",
+            "住所: 東京都千代田区千代田1-1",
+            "複合行: 山田太郎 電話 03-1234-5678 〒100-0001 住所: 東京都千代田区千代田1-1",
+            "日本語では対象外の米国ZIP: 10001",
+            "曖昧な場所メモ: 東京オフィス",
             "機密案件: 極秘計画",
             "山田太郎が草案を承認しました。",
             "山田太郎が再確認を依頼しました。",
@@ -66,6 +78,8 @@ SAMPLES = {
         "mobile": "13800138000",
         "date": "2026-05-31",
         "postal": "100000",
+        "address": "北京市朝阳区建国路88号",
+        "out_of_scope_postal": "10001",
         "project": "秘密项目",
         "body": [
             "负责人: 张伟",
@@ -76,6 +90,10 @@ SAMPLES = {
             "手机号码: 13800138000",
             "确认日期: 2026-05-31",
             "邮政编码: 100000",
+            "地址: 北京市朝阳区建国路88号",
+            "复合行: 张伟 电话 13800138000 邮政编码: 100000 地址: 北京市朝阳区建国路88号",
+            "中文规则不处理美国ZIP: 10001",
+            "模糊地点备注: 北京办公室",
             "敏感项目: 秘密项目",
             "张伟批准了草案。",
             "张伟要求再次复核。",
@@ -89,14 +107,14 @@ def write_text_family(folder: Path, language: str, sample: dict[str, object]) ->
     body = list(sample["body"])
     (folder / f"{language}_sample.txt").write_text("\n".join([str(sample["title"]), "", *body]) + "\n", encoding="utf-8-sig")
     csv_rows = [
-        "id,name,email,phone,note,date",
-        f"1,{sample['person']},{sample['email']},{sample['phone']},{sample['project']},{sample['date']}",
-        f"2,{sample['second_person']},{sample['email']},{sample['mobile']},{sample['postal']},{sample['date']}",
+        "id,name,email,phone,postal,address,note,date",
+        f"1,{sample['person']},{sample['email']},{sample['phone']},{sample['postal']},{sample['address']},{sample['project']},{sample['date']}",
+        f"2,{sample['second_person']},{sample['email']},{sample['mobile']},{sample['out_of_scope_postal']},{sample['address']},{sample['project']},{sample['date']}",
     ]
     (folder / f"{language}_contacts.csv").write_text("\n".join(csv_rows) + "\n", encoding="utf-8-sig")
     log_rows = [
         f"INFO owner={sample['person']} phone={sample['phone']} date={sample['date']}",
-        f"WARN reviewer={sample['second_person']} mobile={sample['mobile']} postal={sample['postal']}",
+        f"WARN reviewer={sample['second_person']} mobile={sample['mobile']} postal={sample['postal']} address={sample['address']}",
         f"INFO project={sample['project']} email={sample['email']}",
     ]
     (folder / f"{language}_app.log").write_text("\n".join(log_rows) + "\n", encoding="utf-8-sig")
@@ -120,7 +138,7 @@ def write_xlsx(folder: Path, language: str, sample: dict[str, object]) -> None:
     sheet = workbook.active
     sheet.title = "sample"
     sheet.append(["field", "value"])
-    for key in ("title", "person", "second_person", "email", "phone", "mobile", "date", "postal", "project"):
+    for key in ("title", "person", "second_person", "email", "phone", "mobile", "date", "postal", "address", "project"):
         sheet.append([key, sample[key]])
     workbook.save(folder / f"{language}_workbook.xlsx")
 

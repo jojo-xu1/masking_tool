@@ -8,6 +8,10 @@ Repeated phone: 202-555-0143
 Compact phone: 2025550143
 Review date: 2026-05-31
 Postal code: 10001
+Address: 123 Market Street, New York, NY
+Combined: Alice Smith phone 202-555-0143 ZIP 10001 Address: 123 Market Street, New York, NY
+Japan postal out of scope for English: 100-0001
+Ambiguous location note: New York office
 Sensitive project: Project Falcon
 Alice Smith approved the report.
 Alice Smith requested a second review.

@@ -35,3 +35,17 @@ sources:
     risk_level: high
     judgment_reason: "匹配代表性电话号码格式"
     recommended_action: "外部共享前替换"
+  - id: zh-address
+    enabled: true
+    type: address
+    category: ADDRESS
+    risk_level: high
+    judgment_reason: "匹配地址标签或中国代表性地址格式"
+    recommended_action: "外部共享前替换"
+  - id: zh-postal-code
+    enabled: true
+    type: postal_code
+    category: POSTAL_CODE
+    risk_level: medium
+    judgment_reason: "匹配中国代表性邮政编码格式"
+    recommended_action: "外部共享前替换"

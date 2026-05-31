@@ -14,7 +14,10 @@ gates: masking replacement, supported file handling, unsupported skips,
 folder-wide processing, report integrity, output placement, language
 selection/detection behavior, configuration on/off behavior, explicitly
 specified ML/NER detection-source availability behavior, reproducibility, and
-input non-destruction.
+input non-destruction. When a task resolves a GitHub issue or local issue draft,
+tasks MUST include updating `spec.md` and the issue resolution notes. Feature
+delivery tasks MUST include synchronizing the feature branch to GitHub before
+handoff or PR creation.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -166,6 +169,10 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Validate unsupported files are reported as `skipped_unsupported`
 - [ ] TXXX Validate original input files are not modified
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX If resolving an issue, update the related `spec.md` requirements,
+  edge cases, and issue resolution notes
+- [ ] TXXX Push the feature branch to the matching GitHub remote branch before
+  handoff or PR creation
 
 ---
 
@@ -257,5 +264,9 @@ With multiple developers:
 - Each user story should be independently completable and testable
 - Verify tests fail before implementing
 - Commit after each task or logical group
+- Push the feature branch to GitHub after implementation completion, after issue
+  resolution, and before PR creation
+- When closing or resolving an issue, update `spec.md` and the issue record in
+  the same logical change
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

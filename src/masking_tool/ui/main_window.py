@@ -22,6 +22,7 @@ class MainWindow:
             QLineEdit,
             QMainWindow,
             QMessageBox,
+            QProgressBar,
             QPushButton,
             QRadioButton,
             QTextEdit,
@@ -78,13 +79,28 @@ class MainWindow:
         self.person_detection_check.setChecked(True)
         self.phone_detection_check = QCheckBox("Phone numbers")
         self.phone_detection_check.setChecked(True)
+        self.address_detection_check = QCheckBox("Addresses")
+        self.address_detection_check.setChecked(True)
+        self.postal_detection_check = QCheckBox("Postal codes")
+        self.postal_detection_check.setChecked(True)
         form.addRow("Detection:", self.person_detection_check)
         form.addRow("", self.phone_detection_check)
+        form.addRow("", self.address_detection_check)
+        form.addRow("", self.postal_detection_check)
         layout.addLayout(form)
 
         self.run_button = QPushButton("Run masking")
         self.run_button.setMinimumHeight(36)
         layout.addWidget(self.run_button)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 1)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+        self.progress_label = QLabel("")
+        self.progress_label.setVisible(False)
+        layout.addWidget(self.progress_bar)
+        layout.addWidget(self.progress_label)
 
         self.log = QTextEdit()
         self.log.setReadOnly(True)
@@ -117,6 +133,14 @@ class MainWindow:
             }
             QPushButton:hover { background: #1d4ed8; }
             QPushButton:disabled { background: #9ca3af; }
+            QProgressBar {
+                background: white;
+                border: 1px solid #cfd6df;
+                border-radius: 4px;
+                height: 16px;
+                text-align: center;
+            }
+            QProgressBar::chunk { background: #16a34a; border-radius: 3px; }
             QRadioButton, QLabel { font-size: 13px; color: #374151; }
             """
         )
@@ -154,6 +178,8 @@ class MainWindow:
         return [Path(str(defaults / name)) for name in ("en.yml", "ja.yml", "zh.yml")]
 
     def _run(self) -> None:
+        if not self.run_button.isEnabled():
+            return
         raw_path = self.path_edit.text().strip()
         if not raw_path:
             self.QMessageBox.warning(self.window, "Missing input", "Choose an input file or folder first.")
@@ -170,10 +196,32 @@ class MainWindow:
                 rules = [rule if rule.rule_type.value != "person" else _disabled_rule(rule) for rule in rules]
             if not self.phone_detection_check.isChecked():
                 rules = [rule if rule.rule_type.value != "phone" else _disabled_rule(rule) for rule in rules]
+            if not self.address_detection_check.isChecked():
+                rules = [rule if rule.rule_type.value != "address" else _disabled_rule(rule) for rule in rules]
+            if not self.postal_detection_check.isChecked():
+                rules = [rule if rule.rule_type.value != "postal_code" else _disabled_rule(rule) for rule in rules]
             self.run_button.setEnabled(False)
+            self.progress_bar.setVisible(True)
+            self.progress_label.setVisible(True)
+            self.progress_bar.setRange(0, 1)
+            self.progress_bar.setValue(0)
+            self.progress_label.setText("Starting...")
             self.log.setPlainText("Processing...\n")
-            output_dir, results = process(selection, rules)
-            lines = [f"Output: {output_dir}", ""]
+            output_dir, results = process(selection, rules, self._update_progress)
+            processed = sum(1 for result in results if result.target.status.value == "processed")
+            skipped = sum(
+                1
+                for result in results
+                if result.target.status.value in {"skipped_unsupported", "skipped_out_of_scope", "no_replacement"}
+            )
+            failed = sum(1 for result in results if result.target.status.value == "failed")
+            lines = [
+                f"Output: {output_dir}",
+                f"Processed: {processed}",
+                f"Skipped: {skipped}",
+                f"Failed: {failed}",
+                "",
+            ]
             for result in results:
                 target = result.target
                 lines.append(f"{target.status.value}: {target.relative_path}")
@@ -186,6 +234,20 @@ class MainWindow:
             self.QMessageBox.critical(self.window, "Masking failed", str(exc))
         finally:
             self.run_button.setEnabled(True)
+
+    def _update_progress(self, progress) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        total = max(progress.total_targets, 1)
+        self.progress_bar.setRange(0, total)
+        self.progress_bar.setValue(min(progress.completed_targets, total))
+        current = f" - {progress.current_target}" if progress.current_target else ""
+        state = "Running" if progress.is_running else "Complete"
+        self.progress_label.setText(
+            f"{state}: {progress.completed_targets}/{progress.total_targets} "
+            f"processed={progress.processed_count} skipped={progress.skipped_count} failed={progress.failed_count}{current}"
+        )
+        QApplication.processEvents()
 
 
 def _disabled_rule(rule):

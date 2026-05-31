@@ -1,12 +1,13 @@
 ﻿from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from masking_tool.core.discovery import discover_targets
 from masking_tool.core.eligibility import apply_eligibility_status
 from masking_tool.core.external_permission import permission_snapshot
 from masking_tool.core.input_selection import validate_input_selection
-from masking_tool.core.models import FileStatus, InputSelection, MaskingRule, SelectionType, TargetFile
+from masking_tool.core.models import FileStatus, InputSelection, MaskingRule, ProcessingProgress, SelectionType, TargetFile
 from masking_tool.core.output import create_run_output_dir
 from masking_tool.core.status import FileProcessingResult
 from masking_tool.detection.detector import detect_text
@@ -66,7 +67,14 @@ def _write_supported_text_blocks(target: TargetFile, output_path: Path, blocks: 
     raise ValueError(f"Unsupported extension: {target.extension}")
 
 
-def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, list[FileProcessingResult]]:
+ProgressCallback = Callable[[ProcessingProgress], None]
+
+
+def process(
+    selection: InputSelection,
+    rules: list[MaskingRule],
+    progress_callback: ProgressCallback | None = None,
+) -> tuple[Path, list[FileProcessingResult]]:
     validate_input_selection(selection)
     permission_snapshot(selection.external_permission)
     output_dir = create_run_output_dir(selection.output_root)
@@ -76,10 +84,34 @@ def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, 
     all_detections = []
     results: list[FileProcessingResult] = []
 
+    def emit(current: TargetFile | None = None, running: bool = True) -> None:
+        if progress_callback is None:
+            return
+        progress_callback(
+            ProcessingProgress(
+                total_targets=len(targets),
+                completed_targets=len(results),
+                processed_count=sum(1 for result in results if result.status == FileStatus.PROCESSED),
+                skipped_count=sum(
+                    1
+                    for result in results
+                    if result.status in {FileStatus.SKIPPED_UNSUPPORTED, FileStatus.SKIPPED_OUT_OF_SCOPE, FileStatus.NO_REPLACEMENT}
+                ),
+                failed_count=sum(1 for result in results if result.status == FileStatus.FAILED),
+                current_target=current.relative_path.as_posix() if current else "",
+                output_dir=output_dir,
+                is_running=running,
+            )
+        )
+
+    emit()
+
     for target in targets:
+        emit(target)
         apply_eligibility_status(target)
         if target.status == FileStatus.SKIPPED_UNSUPPORTED:
             results.append(FileProcessingResult(target))
+            emit(target)
             continue
         try:
             text_blocks = _read_supported_text_blocks(target)
@@ -90,6 +122,7 @@ def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, 
                     target.status = FileStatus.FAILED
                     target.failure_reason = "Language detection failed"
                     results.append(FileProcessingResult(target))
+                    emit(target)
                     continue
                 target.applied_language = language
                 target.language_confidence = confidence
@@ -115,10 +148,13 @@ def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, 
             else:
                 target.status = FileStatus.NO_REPLACEMENT
             results.append(FileProcessingResult(target, detections))
+            emit(target)
         except Exception as exc:
             target.status = FileStatus.FAILED
             target.failure_reason = str(exc)
             results.append(FileProcessingResult(target))
+            emit(target)
 
     write_report(output_dir / "機密情報検出結果.xlsx", all_detections, targets)
+    emit(running=False)
     return output_dir, results

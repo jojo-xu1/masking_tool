@@ -55,7 +55,7 @@ def load_rule_file(path: str | Path, starting_order: int = 0) -> list[MaskingRul
             re.compile(str(pattern))
         if rule_type == RuleType.EXPLICIT and not literal:
             raise ValueError(f"Explicit rule requires literal: {rule_id}")
-        if rule_type in {RuleType.PERSON, RuleType.PHONE} and (pattern or literal):
+        if rule_type in {RuleType.PERSON, RuleType.PHONE, RuleType.ADDRESS, RuleType.POSTAL_CODE} and (pattern or literal):
             raise ValueError(f"Detection source does not accept pattern or literal: {rule_id}")
 
         rules.append(
