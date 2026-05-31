@@ -31,11 +31,23 @@ Expected checks:
 - Supported files are processed.
 - `.md` files are reported as `skipped_unsupported`.
 - Email and phone values are masked.
+- Address and postal-code values are masked according to each language's first
+  version country scope: English/US, Japanese/Japan, and Chinese/China.
+- Address and postal-code values on the same line are reported and replaced as
+  separate detections.
 - Repeated identical phone values reuse the same `PHONE_連番` within one run.
+- Repeated identical address and postal-code values reuse the same
+  `ADDRESS_連番` and `POSTAL_CODE_連番` within one run.
 - Person names are masked when the corresponding person detector is available.
 - Dates, postal codes, short numbers, and long account-like numbers are not
   masked as phone numbers.
+- Dates, phone numbers, account-like values, ambiguous location notes, and
+  out-of-scope country postal formats are not masked by default address or
+  postal-code detection.
 - Text-family files may include UTF-8 BOM, but BOM must not appear in detected
   terms, replacements, or report context.
 - Japanese and Chinese Office files and text-based PDFs must keep CJK text
   readable before and after extraction.
+- Manual UI smoke checks should confirm visible folder progress within 1 second,
+  duplicate-run prevention, output location display, and processed/skipped/failed
+  completion counts.

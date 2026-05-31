@@ -24,6 +24,8 @@ class RuleType(str, Enum):
     EXPLICIT = "explicit"
     PERSON = "person"
     PHONE = "phone"
+    ADDRESS = "address"
+    POSTAL_CODE = "postal_code"
 
 
 class RiskLevel(str, Enum):
@@ -118,3 +120,15 @@ class DetectionResult:
     @property
     def risk_level(self) -> RiskLevel:
         return self.rule.risk_level
+
+
+@dataclass(frozen=True)
+class ProcessingProgress:
+    total_targets: int = 0
+    completed_targets: int = 0
+    processed_count: int = 0
+    skipped_count: int = 0
+    failed_count: int = 0
+    current_target: str = ""
+    output_dir: Path | None = None
+    is_running: bool = False

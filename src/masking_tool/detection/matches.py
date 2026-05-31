@@ -11,6 +11,7 @@ class DetectionMatch:
     start: int
     end: int
     text: str
+    line_context: str = ""
 
     @property
     def source_id(self) -> str:
@@ -24,6 +25,24 @@ class DetectionMatch:
 def match_priority(match: DetectionMatch) -> tuple[int, int, int]:
     explicit = 1 if match.rule.rule_type == RuleType.EXPLICIT else 0
     return (explicit, match.rule.risk_level.priority, -match.rule.order)
+
+
+def line_context_for(text: str, start: int, end: int) -> str:
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    if line_end < 0:
+        line_end = len(text)
+    return text[line_start:line_end].rstrip("\r")
+
+
+def with_line_context(match: DetectionMatch, text: str) -> DetectionMatch:
+    if match.line_context:
+        return match
+    return DetectionMatch(match.rule, match.start, match.end, match.text, line_context_for(text, match.start, match.end))
+
+
+def attach_line_context(matches: list[DetectionMatch], text: str) -> list[DetectionMatch]:
+    return [with_line_context(match, text) for match in matches]
 
 
 def resolve_overlaps(matches: list[DetectionMatch]) -> list[DetectionMatch]:

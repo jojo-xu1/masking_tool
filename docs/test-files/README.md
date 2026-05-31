@@ -17,3 +17,11 @@ Use `docs/test-files` and `tests/fixtures/text/report_spacy_phone` to verify:
 - Japanese and Chinese text remains readable in Office files and text-based PDFs.
 - `機密情報検出結果.xlsx` has exactly the required 8 columns, frozen headers,
   filters, wrapped long-text columns, and visible risk/status coloring.
+
+## Address, Postal Code, And Progress Samples
+
+The language-separated samples include address and postal-code positives,
+same-line multiple detections, ambiguous address negatives, and out-of-scope
+country postal examples. Use them to confirm that report context shows the
+original full line before replacement and that folder runs expose progress and
+completion counts in the UI.

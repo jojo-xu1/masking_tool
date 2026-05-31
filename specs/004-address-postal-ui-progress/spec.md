@@ -15,6 +15,7 @@
 - Q: 住所と郵便番号が同じ行に連続している場合の置換単位はどうするか？ → A: 郵便番号部分は `POSTAL_CODE_連番`、住所部分は `ADDRESS_連番` として別々に置換する
 - Q: 住所検出の範囲はどうするか？ → A: `住所:`, `Address:`, `地址:` などのラベル、または国別の明確な住所構造がある場合だけ検出する
 - Q: 英語ファイルの住所・郵便番号ルール範囲はどうするか？ → A: 日本語は日本、英語は米国、中国語は中国の代表形式に限定する
+- Q: 言語指定または言語判定ができない場合はどう扱うか？ → A: 単一ファイルで言語未指定または未対応なら実行前エラー、フォルダで言語判定不能なら対象ファイルを `failed` として置換せず理由をレポートする
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -75,6 +76,8 @@
 - 住所検出と郵便番号検出が隣接する場合、郵便番号部分は `POSTAL_CODE_連番`、住所部分は `ADDRESS_連番` として別々にレポート・置換し、出力ファイルでは文字列が破損しないようにする。
 - 住所は `住所:`, `Address:`, `地址:` などのラベル、または国別の明確な住所構造がある場合に検出し、住所らしい曖昧な文字列を広く推測して置換しない。
 - フォルダ処理でファイルごとに適用言語が異なる場合、各ファイルの言語に応じた住所・郵便番号ルールを適用する。
+- 単一ファイル処理で言語が未指定または未対応の場合、処理開始前にエラーとして扱い、入力ファイルも出力ファイルも変更しない。
+- フォルダ処理でファイルの言語判定ができない場合、その対象ファイルは置換せず `failed` として扱い、理由を `機密情報検出結果.xlsx` に記録する。
 - 住所・郵便番号の国別ルールは、日本語ファイルでは日本、英語ファイルでは米国、中国語ファイルでは中国の代表形式に限定し、それ以外の国・地域形式は第一版の標準検出対象外とする。
 - テキスト型PDFの文脈行は抽出可能なテキスト行を対象とし、画像内文字、スキャンPDF、OCR、埋め込みオブジェクトは対象外のままとする。
 - 画面処理中に一部ファイルが失敗しても、進捗表示と最終結果で成功・失敗を区別して確認できる。
@@ -106,6 +109,8 @@
 - **FR-021**: System MUST treat adjacent postal-code and address text as separate detections and separate replacements, using `POSTAL_CODE_連番` for the postal-code segment and `ADDRESS_連番` for the address segment.
 - **FR-022**: System MUST limit address detection to values with address labels or country-appropriate address structures, and MUST avoid broad free-form guessing of ambiguous address-like text.
 - **FR-023**: System MUST treat non-Japan formats in Japanese files, non-US formats in English files, and non-China formats in Chinese files as outside the default address and postal-code detection scope unless explicitly configured by the user.
+- **FR-024**: System MUST fail validation before processing when single-file input has no language selection or an unsupported language selection.
+- **FR-025**: System MUST mark a folder-mode target file as `failed`, avoid writing a masked output for that file, and report the reason when its language cannot be determined.
 
 ### Masking Tool Contract *(mandatory for this project)*
 
@@ -144,6 +149,8 @@
 - **SC-009**: In validation rows where postal code and address are adjacent, the masked output contains separate postal-code and address replacement labels in the expected order.
 - **SC-010**: Validation samples with labeled or structurally clear addresses are masked, while ambiguous unlabeled location-like text marked as non-address is not masked as an address.
 - **SC-011**: Validation samples containing out-of-scope country formats for the applied language are not masked by default address or postal-code detection.
+- **SC-012**: Single-file runs without a supported language selection fail before processing and leave the input unchanged.
+- **SC-013**: Folder runs with a language-undetectable file continue processing other files and report the undetectable file as `failed` without creating a masked output for it.
 
 ## Assumptions
 

@@ -35,3 +35,17 @@ sources:
     risk_level: high
     judgment_reason: "代表的な電話番号形式に一致"
     recommended_action: "外部共有前に置換"
+  - id: ja-address
+    enabled: true
+    type: address
+    category: ADDRESS
+    risk_level: high
+    judgment_reason: "住所ラベルまたは代表的な日本住所形式に一致"
+    recommended_action: "外部共有前に置換"
+  - id: ja-postal-code
+    enabled: true
+    type: postal_code
+    category: POSTAL_CODE
+    risk_level: medium
+    judgment_reason: "代表的な日本郵便番号形式に一致"
+    recommended_action: "外部共有前に置換"

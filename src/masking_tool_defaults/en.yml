@@ -35,3 +35,17 @@ sources:
     risk_level: high
     judgment_reason: "Matches representative phone number pattern"
     recommended_action: "Replace before external sharing"
+  - id: en-address
+    enabled: true
+    type: address
+    category: ADDRESS
+    risk_level: high
+    judgment_reason: "Matches representative US address pattern or address label"
+    recommended_action: "Replace before external sharing"
+  - id: en-postal-code
+    enabled: true
+    type: postal_code
+    category: POSTAL_CODE
+    risk_level: medium
+    judgment_reason: "Matches representative US ZIP code pattern"
+    recommended_action: "Replace before external sharing"

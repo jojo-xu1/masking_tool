@@ -53,6 +53,20 @@ Chinese phone-number formats. Person and phone detection sources can be disabled
 through their rule/source configuration when only explicit and regex masking is
 desired.
 
+## Address, Postal Code, And UI Progress
+
+Address and postal-code detection is enabled by default for English, Japanese,
+and Chinese. The first version intentionally uses representative country scopes:
+Japanese files use Japan formats, English files use US formats, and Chinese files
+use China formats. Addresses are detected only when an address label is present
+or the text has a clear country-specific address structure. Ambiguous location
+notes and out-of-scope country formats are left unchanged by default.
+
+The desktop UI includes toggles for person, phone, address, and postal-code
+detection. Folder runs show progress, block duplicate starts while processing is
+running, and show the output location plus processed, skipped, and failed counts
+after completion.
+
 ## External Communication
 
 Masking runs are local by default. Input content, detected terms, replacement

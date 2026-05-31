@@ -8,6 +8,8 @@ JAPANESE_MARKERS = ("氏名", "名前", "電話", "メール", "住所", "会社
 
 
 def detect_language(text: str) -> tuple[str | None, float]:
+    if not any(char.isalpha() or "\u3040" <= char <= "\u30ff" or "\u4e00" <= char <= "\u9fff" for char in text):
+        return None, 0.0
     if any("\u4e00" <= char <= "\u9fff" for char in text):
         # Han characters can be Japanese or Chinese. Kana gives a strong Japanese signal.
         if any("\u3040" <= char <= "\u30ff" for char in text):
