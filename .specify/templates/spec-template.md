@@ -124,6 +124,12 @@
 - **MC-011**: If the feature adds ML/NER or other non-regex detection sources,
   the specification MUST state the detection source, target languages, on/off
   control, unavailable-source behavior, conflict resolution, and report reason.
+- **MC-012**: If the feature resolves a GitHub issue or local issue draft, the
+  specification MUST reflect the resolved behavior, constraints, acceptance
+  criteria, or edge cases introduced by that issue.
+- **MC-013**: Feature delivery MUST include GitHub branch synchronization for the
+  feature branch before handoff or PR creation, with any sync failure explicitly
+  reported.
 
 ### Key Entities *(include if feature involves data)*
 

@@ -31,3 +31,8 @@ Address detection is intentionally narrow. It accepts address labels such as
 location-like notes are not masked as addresses by default. Postal-code detection
 filters obvious dates, phone numbers, account-like values, money/account labels,
 and country formats outside the applied language scope.
+
+Postal-code context can come from inline labels such as `Postal code:`, `ZIP:`,
+`postal=`, `郵便番号=`, and `邮编=`, from CSV column headers such as `postal`,
+`zip`, `郵便番号`, or `邮政编码`, and from XLSX left-neighbor or header cells that
+label the adjacent value as a postal code.

@@ -60,6 +60,12 @@
 - Verification gate: plan defines tests or validation for reproducibility,
   folder-wide processing, unsupported skips, report integrity, and input
   non-destruction.
+- GitHub sync gate: plan identifies the feature branch and confirms it will be
+  synchronized to the same-name GitHub remote branch at implementation
+  completion, after issue resolutions, and before PR creation.
+- Issue traceability gate: if the feature resolves a GitHub issue or local issue
+  draft, plan states that `spec.md`, issue resolution notes, tests, and
+  validation evidence will be updated together.
 
 ## Project Structure
 

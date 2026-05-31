@@ -73,6 +73,7 @@
 - 置換対象が同じ行に複数存在する場合でも、先頭の1件だけでなく全件を検出し、各検出語句を個別に置換する。
 - 同じ住所または郵便番号が同一実行内で複数回出現する場合、同じ置換提案を再利用する。
 - 郵便番号らしい数値が日付、電話番号、社員番号、金額など明らかに別カテゴリの値である場合、郵便番号として誤検出しない。
+- 郵便番号は `Postal code:`, `ZIP:`, `postal=`, `郵便番号=`, `邮编=` などのラベル付き表記、CSV の `postal`/`zip`/`郵便番号`/`邮政编码` 列、XLSX の左隣またはヘッダーセルで郵便番号ラベルが示される値も検出対象とする。
 - 住所検出と郵便番号検出が隣接する場合、郵便番号部分は `POSTAL_CODE_連番`、住所部分は `ADDRESS_連番` として別々にレポート・置換し、出力ファイルでは文字列が破損しないようにする。
 - 住所は `住所:`, `Address:`, `地址:` などのラベル、または国別の明確な住所構造がある場合に検出し、住所らしい曖昧な文字列を広く推測して置換しない。
 - フォルダ処理でファイルごとに適用言語が異なる場合、各ファイルの言語に応じた住所・郵便番号ルールを適用する。
@@ -98,6 +99,7 @@
 - **FR-010**: System MUST report address detections with information category `ADDRESS`, risk level, judgment reason, and recommended action.
 - **FR-011**: System MUST report postal-code detections with information category `POSTAL_CODE`, risk level, judgment reason, and recommended action.
 - **FR-012**: System MUST avoid classifying dates, phone numbers, account numbers, money amounts, and other clearly non-postal numeric values as postal codes.
+- **FR-012a**: System MUST detect supported postal-code values when postal-code context is provided by inline labels, key/value labels, CSV headers, or XLSX adjacent/header cells.
 - **FR-013**: System MUST preserve existing conflict-resolution behavior for overlapping explicit, regex, person, phone, address, and postal-code detections.
 - **FR-014**: Users MUST be able to enable or disable address and postal-code detection in the same general manner as other configurable detection sources.
 - **FR-015**: The UI MUST show visible progress while processing is running.

@@ -33,6 +33,8 @@ Expected checks:
 - Email and phone values are masked.
 - Address and postal-code values are masked according to each language's first
   version country scope: English/US, Japanese/Japan, and Chinese/China.
+- Postal-code values are masked when the context is supplied by inline labels,
+  CSV postal-code columns, or XLSX adjacent/header label cells.
 - Address and postal-code values on the same line are reported and replaced as
   separate detections.
 - Repeated identical phone values reuse the same `PHONE_連番` within one run.

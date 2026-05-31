@@ -2,7 +2,7 @@
 
 ## Status
 
-Open.
+Resolved on branch `004-address-postal-ui-progress`.
 
 ## Source
 
@@ -89,20 +89,39 @@ money values, and out-of-scope country formats.
 
 ## Proposed Tasks
 
-- [ ] Add unit tests for equals-style postal labels in
+- [x] Add unit tests for equals-style postal labels in
   `tests/unit/test_postal_detector.py`.
-- [ ] Add CSV header-aware postal-code detection coverage for English, Japanese,
+- [x] Add CSV header-aware postal-code detection coverage for English, Japanese,
   and Chinese in `tests/integration/test_address_postal_masking_flow.py`.
-- [ ] Add log key/value postal-code coverage for English, Japanese, and Chinese
+- [x] Add log key/value postal-code coverage for English, Japanese, and Chinese
   in `tests/integration/test_address_postal_masking_flow.py`.
-- [ ] Add cross-format regression coverage to confirm postal-code values are
+- [x] Add cross-format regression coverage to confirm postal-code values are
   replaced in text, Office, and text-based PDF adapters.
-- [ ] Update `src/masking_tool/detection/postal.py` to accept supported
+- [x] Update `src/masking_tool/detection/postal.py` to accept supported
   label/value variants while preserving false-positive filters.
-- [ ] Refresh language-separated fixtures and documentation expectations if the
+- [x] Refresh language-separated fixtures and documentation expectations if the
   accepted postal label forms are expanded.
-- [ ] Run focused postal validation and full regression:
+- [x] Run focused postal validation and full regression:
   `python -m pytest tests/unit/test_postal_detector.py tests/integration/test_address_postal_masking_flow.py tests`
+
+## Resolution Notes
+
+- Postal-code detection now accepts equals-style labels such as `postal=`,
+  `zip=`, `郵便番号=`, and `邮编=`.
+- CSV postal-code values are detected when the matching value appears under a
+  postal-code column header such as `postal`, `zip`, `郵便番号`, or `邮政编码`.
+- XLSX postal-code value cells are detected when their left-neighbor cell or
+  column header identifies the value as a postal code.
+- False-positive checks now avoid rejecting a valid postal-code value merely
+  because another column on the same CSV row contains a date.
+- Language-separated sample folder processing was rechecked and no expected
+  postal-code values remained in processed `.txt`, `.csv`, `.log`, `.docx`,
+  `.xlsx`, `.pptx`, or text-based `.pdf` outputs.
+
+## Validation
+
+- `python -m pytest --basetemp=.pytest-tmp -o cache_dir=.pytest-cache-local tests/unit/test_postal_detector.py tests/integration/test_address_postal_masking_flow.py`
+- Manual language-separated sample processing for `en`, `ja`, and `zh` confirmed no expected postal-code values remained in supported processed outputs.
 
 ## GitHub Sync
 
