@@ -1,0 +1,37 @@
+﻿language: ja
+version: 1
+rules:
+  - id: ja-email
+    enabled: true
+    type: regex
+    category: EMAIL
+    risk_level: high
+    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    judgment_reason: "メールアドレス形式に一致"
+    recommended_action: "外部共有前に置換"
+  - id: ja-project
+    enabled: true
+    type: explicit
+    category: PROJECT
+    risk_level: medium
+    literal: "極秘計画"
+    judgment_reason: "個別指定された機密語句"
+    recommended_action: "公開資料では置換"
+sources:
+  - id: ja-person-spacy
+    enabled: true
+    type: person
+    category: PERSON
+    risk_level: high
+    model_name: ja_core_news_sm
+    required: true
+    unavailable_behavior: fail
+    judgment_reason: "人名として検出"
+    recommended_action: "外部共有前に置換"
+  - id: ja-phone
+    enabled: true
+    type: phone
+    category: PHONE
+    risk_level: high
+    judgment_reason: "代表的な電話番号形式に一致"
+    recommended_action: "外部共有前に置換"

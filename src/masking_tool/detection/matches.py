@@ -1,0 +1,43 @@
+﻿from __future__ import annotations
+
+from dataclasses import dataclass
+
+from masking_tool.core.models import MaskingRule, RuleType
+
+
+@dataclass(frozen=True)
+class DetectionMatch:
+    rule: MaskingRule
+    start: int
+    end: int
+    text: str
+
+    @property
+    def source_id(self) -> str:
+        return self.rule.id
+
+    @property
+    def category(self) -> str:
+        return self.rule.category
+
+
+def match_priority(match: DetectionMatch) -> tuple[int, int, int]:
+    explicit = 1 if match.rule.rule_type == RuleType.EXPLICIT else 0
+    return (explicit, match.rule.risk_level.priority, -match.rule.order)
+
+
+def resolve_overlaps(matches: list[DetectionMatch]) -> list[DetectionMatch]:
+    winners: list[DetectionMatch] = []
+    for match in sorted(matches, key=lambda m: (m.start, m.end, m.rule.order)):
+        overlapping = [w for w in winners if not (match.end <= w.start or match.start >= w.end)]
+        if not overlapping:
+            winners.append(match)
+            continue
+
+        best = max([match, *overlapping], key=match_priority)
+        for old in overlapping:
+            if old is not best and old in winners:
+                winners.remove(old)
+        if best is match and match not in winners:
+            winners.append(match)
+    return sorted(winners, key=lambda m: (m.start, m.end, m.rule.order))

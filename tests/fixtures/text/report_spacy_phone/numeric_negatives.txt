@@ -1,0 +1,5 @@
+﻿Date: 2026-05-30
+Postal JP: 100-0001
+Postal US: 90210
+Too short: 12345
+Too long: 12345678901234567890

@@ -1,0 +1,13 @@
+﻿English masking test memo
+
+Owner: Alice Smith
+Reviewer: John Miller
+Contact email: alice.smith@example.com
+Primary phone: 202-555-0143
+Repeated phone: 202-555-0143
+Compact phone: 2025550143
+Review date: 2026-05-31
+Postal code: 10001
+Sensitive project: Project Falcon
+Alice Smith approved the report.
+Alice Smith requested a second review.

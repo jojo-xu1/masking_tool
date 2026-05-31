@@ -1,0 +1,37 @@
+﻿language: zh
+version: 1
+rules:
+  - id: zh-email
+    enabled: true
+    type: regex
+    category: EMAIL
+    risk_level: high
+    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    judgment_reason: "匹配电子邮件地址格式"
+    recommended_action: "外部共享前替换"
+  - id: zh-project
+    enabled: true
+    type: explicit
+    category: PROJECT
+    risk_level: medium
+    literal: "秘密项目"
+    judgment_reason: "单独指定的敏感词"
+    recommended_action: "公开资料中替换"
+sources:
+  - id: zh-person-spacy
+    enabled: true
+    type: person
+    category: PERSON
+    risk_level: high
+    model_name: zh_core_web_sm
+    required: false
+    unavailable_behavior: fallback_heuristic
+    judgment_reason: "检测为人名"
+    recommended_action: "外部共享前替换"
+  - id: zh-phone
+    enabled: true
+    type: phone
+    category: PHONE
+    risk_level: high
+    judgment_reason: "匹配代表性电话号码格式"
+    recommended_action: "外部共享前替换"

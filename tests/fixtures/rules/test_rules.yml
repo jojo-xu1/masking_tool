@@ -1,0 +1,19 @@
+﻿language: en
+version: 1
+rules:
+  - id: en-email
+    enabled: true
+    type: regex
+    category: EMAIL
+    risk_level: high
+    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    judgment_reason: "Matches email"
+    recommended_action: "Replace"
+  - id: en-name
+    enabled: true
+    type: explicit
+    category: PERSON
+    risk_level: medium
+    literal: "Alice Smith"
+    judgment_reason: "Configured name"
+    recommended_action: "Replace"

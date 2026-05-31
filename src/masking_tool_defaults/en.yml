@@ -1,0 +1,37 @@
+﻿language: en
+version: 1
+rules:
+  - id: en-email
+    enabled: true
+    type: regex
+    category: EMAIL
+    risk_level: high
+    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    judgment_reason: "Matches email address pattern"
+    recommended_action: "Replace before external sharing"
+  - id: en-person
+    enabled: true
+    type: explicit
+    category: PERSON
+    risk_level: medium
+    literal: "Alice Smith"
+    judgment_reason: "Explicitly configured person name"
+    recommended_action: "Replace in public documents"
+sources:
+  - id: en-person-spacy
+    enabled: true
+    type: person
+    category: PERSON
+    risk_level: high
+    model_name: en_core_web_sm
+    required: true
+    unavailable_behavior: fail
+    judgment_reason: "Detected as a person name"
+    recommended_action: "Replace before external sharing"
+  - id: en-phone
+    enabled: true
+    type: phone
+    category: PHONE
+    risk_level: high
+    judgment_reason: "Matches representative phone number pattern"
+    recommended_action: "Replace before external sharing"

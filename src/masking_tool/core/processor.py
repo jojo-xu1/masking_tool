@@ -1,0 +1,112 @@
+﻿from __future__ import annotations
+
+from pathlib import Path
+
+from masking_tool.core.discovery import discover_targets
+from masking_tool.core.eligibility import apply_eligibility_status
+from masking_tool.core.external_permission import permission_snapshot
+from masking_tool.core.input_selection import validate_input_selection
+from masking_tool.core.models import FileStatus, InputSelection, MaskingRule, SelectionType, TargetFile
+from masking_tool.core.output import create_run_output_dir
+from masking_tool.core.status import FileProcessingResult
+from masking_tool.detection.detector import detect_text
+from masking_tool.detection.language import detect_language
+from masking_tool.formats.text_adapter import read_text_file, write_text_file
+from masking_tool.replacement.apply import apply_replacements
+from masking_tool.replacement.mapping import ReplacementMapper
+from masking_tool.reporting.excel_report import write_report
+
+
+def _read_supported_text(target: TargetFile) -> str:
+    if target.extension in {".txt", ".csv", ".log"}:
+        return read_text_file(target.source_path)
+    if target.extension == ".docx":
+        from masking_tool.formats.docx_adapter import read_docx_text
+
+        return read_docx_text(target.source_path)
+    if target.extension == ".xlsx":
+        from masking_tool.formats.xlsx_adapter import read_xlsx_text
+
+        return read_xlsx_text(target.source_path)
+    if target.extension == ".pptx":
+        from masking_tool.formats.pptx_adapter import read_pptx_text
+
+        return read_pptx_text(target.source_path)
+    if target.extension == ".pdf":
+        from masking_tool.formats.pdf_adapter import read_pdf_text
+
+        return read_pdf_text(target.source_path)
+    raise ValueError(f"Unsupported extension: {target.extension}")
+
+
+def _write_supported_text(target: TargetFile, output_path: Path, text: str) -> None:
+    if target.extension in {".txt", ".csv", ".log"}:
+        write_text_file(output_path, text)
+        return
+    if target.extension == ".docx":
+        from masking_tool.formats.docx_adapter import write_docx_text
+
+        write_docx_text(target.source_path, output_path, text)
+        return
+    if target.extension == ".xlsx":
+        from masking_tool.formats.xlsx_adapter import write_xlsx_text
+
+        write_xlsx_text(target.source_path, output_path, text)
+        return
+    if target.extension == ".pptx":
+        from masking_tool.formats.pptx_adapter import write_pptx_text
+
+        write_pptx_text(target.source_path, output_path, text)
+        return
+    if target.extension == ".pdf":
+        from masking_tool.formats.pdf_adapter import write_pdf_text
+
+        write_pdf_text(target.source_path, output_path, text)
+        return
+    raise ValueError(f"Unsupported extension: {target.extension}")
+
+
+def process(selection: InputSelection, rules: list[MaskingRule]) -> tuple[Path, list[FileProcessingResult]]:
+    validate_input_selection(selection)
+    permission_snapshot(selection.external_permission)
+    output_dir = create_run_output_dir(selection.output_root)
+    files_dir = output_dir / "files"
+    targets = discover_targets(selection)
+    mapper = ReplacementMapper()
+    all_detections = []
+    results: list[FileProcessingResult] = []
+
+    for target in targets:
+        apply_eligibility_status(target)
+        if target.status == FileStatus.SKIPPED_UNSUPPORTED:
+            results.append(FileProcessingResult(target))
+            continue
+        try:
+            text = _read_supported_text(target)
+            if selection.selection_type == SelectionType.FOLDER:
+                language, confidence = detect_language(text)
+                if not language:
+                    target.status = FileStatus.FAILED
+                    target.failure_reason = "Language detection failed"
+                    results.append(FileProcessingResult(target))
+                    continue
+                target.applied_language = language
+                target.language_confidence = confidence
+            detections = detect_text(target, text, rules, mapper, len(all_detections) + 1)
+            all_detections.extend(detections)
+            output_path = files_dir / target.relative_path
+            if detections:
+                masked = apply_replacements(text, detections)
+                _write_supported_text(target, output_path, masked)
+                target.status = FileStatus.PROCESSED
+                target.output_path = output_path
+            else:
+                target.status = FileStatus.NO_REPLACEMENT
+            results.append(FileProcessingResult(target, detections))
+        except Exception as exc:
+            target.status = FileStatus.FAILED
+            target.failure_reason = str(exc)
+            results.append(FileProcessingResult(target))
+
+    write_report(output_dir / "機密情報検出結果.xlsx", all_detections, targets)
+    return output_dir, results
